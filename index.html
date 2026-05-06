@@ -2,348 +2,342 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avtomatik davomat | Yuz tanish</title>
     <style>
         * {
             box-sizing: border-box;
         }
         body {
-            font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-            background: #0c0f1e;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0f1c;
             margin: 0;
-            min-height: 100vh;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            min-height: 100vh;
         }
-        .card {
-            max-width: 800px;
+        .container {
+            max-width: 900px;
             width: 100%;
-            background: #ffffff;
+            background: white;
             border-radius: 32px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2);
             overflow: hidden;
             padding: 24px;
-            transition: all 0.2s;
         }
         h2 {
-            margin: 0 0 8px 0;
-            font-size: 1.8rem;
+            margin-top: 0;
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: #111;
-        }
-        .sub {
-            color: #4b5563;
-            margin-bottom: 20px;
-            border-left: 3px solid #2563eb;
-            padding-left: 12px;
+            gap: 12px;
         }
         video {
             width: 100%;
             border-radius: 24px;
             background: #000;
-            border: 2px solid #e2e8f0;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border: 2px solid #ddd;
+            transform: scaleX(-1); /* oyna effekti */
         }
-        .status-panel {
-            margin-top: 20px;
-            background: #f8fafc;
-            border-radius: 20px;
+        .status-card {
+            background: #f1f5f9;
+            border-radius: 24px;
             padding: 16px;
+            margin: 20px 0;
         }
         #status {
-            font-weight: 600;
-            font-size: 1rem;
-            padding: 10px;
+            font-weight: bold;
+            padding: 12px;
             border-radius: 40px;
-            background: white;
             text-align: center;
+            background: white;
         }
         .success {
             background: #dcfce7;
-            color: #15803d;
-            border-left: 4px solid #22c55e;
+            color: #166534;
+            border-left: 5px solid #22c55e;
         }
         .error {
             background: #fee2e2;
-            color: #b91c1c;
-            border-left: 4px solid #ef4444;
+            color: #991b1b;
+            border-left: 5px solid #ef4444;
         }
         .info {
-            background: #e0f2fe;
-            color: #0369a1;
-            border-left: 4px solid #0ea5e9;
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 5px solid #3b82f6;
         }
-        .log-box {
+        .log {
             background: #0f172a;
-            color: #a5f3c3;
-            font-family: 'Monaco', monospace;
-            font-size: 12px;
-            padding: 12px;
+            color: #bbf7d0;
+            font-family: monospace;
+            padding: 14px;
             border-radius: 20px;
-            margin-top: 20px;
+            font-size: 12px;
             max-height: 200px;
             overflow-y: auto;
+            margin-top: 20px;
         }
         button {
             background: #1e293b;
-            border: none;
             color: white;
-            padding: 10px 18px;
+            border: none;
+            padding: 10px 20px;
             border-radius: 40px;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            margin-top: 16px;
+            margin-right: 12px;
+            margin-top: 12px;
             transition: 0.2s;
         }
         button:active {
             transform: scale(0.96);
-            background: #0f172a;
+        }
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+        input {
+            padding: 10px 16px;
+            border-radius: 40px;
+            border: 1px solid #ccc;
+            flex: 1;
+            min-width: 150px;
         }
         hr {
-            margin: 18px 0;
-            border-color: #e2e8f0;
-        }
-        .badge {
-            font-size: 14px;
-            background: #e6f0ff;
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 40px;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
-<div class="card">
-    <h2>📸 Avtomatik davomat</h2>
-    <div class="sub">✅ Yuz tashigan zahoti <strong>"keldi"</strong> deb belgilanadi — tugma kerak emas</div>
+<div class="container">
+    <h2>📸 Avtomatik davomat tizimi</h2>
+    <p>✅ Yuz aniqlanganda <strong>hech qanday tugma bosmasdan</strong> "keldi" deb belgilanadi.</p>
 
     <video id="video" width="640" height="480" autoplay muted playsinline></video>
 
-    <div class="status-panel">
+    <div class="status-card">
         <div id="status">⚙️ Modellar yuklanmoqda...</div>
-        <button id="resetBtn">🔄 Qayta boshlash</button>
+        <div class="flex">
+            <input type="text" id="userName" placeholder="Ismingiz" autocomplete="off">
+            <button id="registerBtn">📝 Yuzimni ro‘yxatdan o‘tkazish</button>
+            <button id="resetBtn">🔄 Qayta ishga tushirish</button>
+        </div>
     </div>
 
-    <div class="log-box" id="logArea">
-        📌 [Sistema] Yuklash boshlandi<br>
+    <div class="log" id="logArea">
+        🟢 Tizim ishga tushmoqda...<br>
     </div>
-    <div class="badge">🤖 face-api.js | real-time recognition</div>
+    <small>📌 Bir marta ro‘yxatdan o‘tsangiz, keyingi safar yuzingiz avtomatik tanilinadi.</small>
 </div>
 
-<!-- face-api.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-
 <script>
-    // ---------- SOZLAMALAR ----------
-    const BACKEND_URL = "/api/attendance";   // 👉 O‘Z BACKENDINGIZ URL bilan almashtiring
-    const CHECK_INTERVAL_MS = 1800;          // har 1.8 sekundda yuz tekshiriladi
-    let intervalId = null;
-    let lastMarkedUserId = null;              // bir marta belgilangan foydalanuvchi
+    // ------------------- SOZLAMALAR -------------------
+    const BACKEND_URL = "/api/attendance";   // O‘z backend manzilingiz (agar bo‘lmasa, konsolga yozadi)
+    const CHECK_INTERVAL = 2000;             // har 2 sekundda tekshiradi
+    let recognitionInterval = null;
+    let lastMarkedId = null;                 // bir marta belgilangan odam
+
     let video = document.getElementById('video');
     let statusDiv = document.getElementById('status');
     let logDiv = document.getElementById('logArea');
+    let userNameInput = document.getElementById('userName');
+    let registerBtn = document.getElementById('registerBtn');
+    let resetBtn = document.getElementById('resetBtn');
 
-    // 📝 log yozish (xato yoki normal)
+    // Ro‘yxatdagi taniqli yuzlar (localStorage da saqlanadi)
+    let knownUsers = [];  // [{ id, name, descriptor: Float32Array }]
+
+    // ---------- LOG va STATUS ----------
     function addLog(msg, isError = false) {
-        const p = document.createElement('div');
-        p.textContent = `🕒 ${new Date().toLocaleTimeString()}  →  ${msg}`;
-        p.style.color = isError ? '#ffb4b4' : '#b9f5d8';
-        p.style.marginBottom = '5px';
-        p.style.fontSize = '12px';
-        logDiv.appendChild(p);
-        p.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const line = document.createElement('div');
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        line.style.color = isError ? '#ffb4b4' : '#b9f5d8';
+        line.style.marginBottom = '6px';
+        logDiv.appendChild(line);
+        line.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         console.log(msg);
     }
 
-    function setStatusMessage(text, type = 'info') {
-        statusDiv.innerHTML = text;
-        statusDiv.className = type; // success, error, info
-        addLog(text, type === 'error');
+    function setStatus(msg, type = 'info') {
+        statusDiv.innerHTML = msg;
+        statusDiv.className = type;
+        addLog(msg, type === 'error');
     }
 
-    // ------------------------------------------------------------
-    // 📤 "Keldi" ma'lumotini serverga yuborish (avtomatik)
-    // ------------------------------------------------------------
-    async function sendAttendance(userId, userName) {
-        try {
-            addLog(`📡 Avtomatik yuborish: ${userName} (ID: ${userId}) -> status: keldi`);
-
-            const payload = {
-                userId: userId,
-                name: userName,
-                status: "keldi",
-                timestamp: new Date().toISOString(),
-                source: "face-recognition"
-            };
-
-            // backendga so‘rov
-            const response = await fetch(BACKEND_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            // MUHIM: JSON parse xatosini oldini olish
-            const rawText = await response.text();
-            let serverData = null;
-            try {
-                serverData = JSON.parse(rawText);
-            } catch (e) {
-                // agar javob HTML yoki matn bo‘lsa
-                throw new Error(`Server JSON qaytarmadi: ${rawText.slice(0, 100)}`);
-            }
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${serverData.message || 'server xatosi'}`);
-            }
-
-            setStatusMessage(`✅ ${userName} muvaffaqiyatli "keldi" deb belgilandi`, 'success');
-            addLog(`✅ Javob: ${JSON.stringify(serverData)}`);
-            return true;
-        } catch (err) {
-            console.error("Belgilash xatosi:", err);
-            setStatusMessage(`❌ Avtomatik yuborishda xatolik: ${err.message}`, 'error');
-            addLog(`❌ Xato: ${err.message}`, true);
-            return false;
-        }
+    // ---------- YUZLARNI LOCALSTORAGE GA SAQLASH VA YUKLASH ----------
+    function saveKnownUsers() {
+        // Descriptorlarni oddiy arrayga aylantirib saqlaymiz
+        const toSave = knownUsers.map(u => ({
+            id: u.id,
+            name: u.name,
+            descriptor: Array.from(u.descriptor)
+        }));
+        localStorage.setItem('face_users', JSON.stringify(toSave));
+        addLog(`💾 ${knownUsers.length} ta foydalanuvchi saqlandi`);
     }
 
-    // ------------------------------------------------------------
-    // 🧠 Yuzlarni tanish va moslikni topish (demo + real descriptor)
-    // ------------------------------------------------------------
-    // Sizning tanilgan shaxslaringiz (descriptorlar SAQLANADI)
-    // 🔥 BUNI O‘ZGARTIRING: O‘z foydalanuvchilaringizni qo‘shing
-    // Descriptorlar 128 ta float raqamdan iborat. Bu yerda demo ma'lumotlar.
-    // REALDA: siz ularni backenddan yoki localStorage dan olasiz.
-    let knownUsers = [];  // [{ id, name, descriptor: Float32Array }]
-
-    // *** Yordamchi: yangi yuzni ro‘yxatga olish (birinchi marta) ***
-    // Soddalik uchun: agar hech kim tanilmasa, "Yangi mehmon" deb qo‘shib qo‘yamiz?
-    // Lekin siz oldindan ma'lumotlar bazasiga ega bo‘lishingiz kerak.
-    // Keling, demo sifatida ikkita test user qo‘shamiz (faqat tushuncha uchun).
-    // ASLIDA siz real descriptorlarni yuklashingiz lozim.
-
-    async function loadKnownUsersFromBackend() {
-        try {
-            addLog("🔄 Backenddan taniqli yuzlar yuklanmoqda...");
-            // Agar backendda /api/faces mavjud bo‘lsa – ishlat, bo‘lmasa local demo
-            // demo uchun hech qanday xatolik chiqmasligi uchun bo‘sh massiv qaytaramiz
-            // SIZ BU QISMNI REAL BACKENDGA MOSLAB O‘ZGARTIRING
-            /*
-            const resp = await fetch('/api/faces');
-            if (resp.ok) {
-                const usersArr = await resp.json();
-                knownUsers = usersArr.map(u => ({
-                    id: u.id,
-                    name: u.name,
-                    descriptor: new Float32Array(u.descriptor)
-                }));
-                addLog(`✅ ${knownUsers.length} ta shaxs yuklandi`);
-                return;
-            }
-            */
-            // DEMO MA'LUMOTLAR (SIZ O‘ZINGIZNINGLARINGIZNI QO‘SHING)
-            // Eslatma: real descriptorlar 128 o‘lchamli bo‘ladi.
-            // Quyidagilar faqatgina tizim yaxshi ishlashi uchun "bo‘sh" namuna.
-            // Agar sizda haqiqiy descriptorlar bo‘lsa, ularni yuklang.
-            knownUsers = [];  // agar backend bo‘lmasa, hech kim tanilmaydi.
-            // Istasangiz, quyidagi qatorni o‘chirib tashlang:
-            addLog("⚠️ Hozircha backenddan yuz ma'lumotlari yuklanmagan. Hech kim tanilmaydi.", false);
-        } catch (e) {
-            addLog(`⚠️ Yuzlar yuklashda xatolik: ${e.message}`, true);
+    function loadKnownUsers() {
+        const raw = localStorage.getItem('face_users');
+        if (!raw) {
             knownUsers = [];
+            addLog("📂 Hech qanday ro‘yxatdan o‘tgan yuz yo‘q.");
+            return;
+        }
+        try {
+            const loaded = JSON.parse(raw);
+            knownUsers = loaded.map(u => ({
+                id: u.id,
+                name: u.name,
+                descriptor: new Float32Array(u.descriptor)
+            }));
+            addLog(`✅ ${knownUsers.length} ta foydalanuvchi yuklandi: ${knownUsers.map(u=>u.name).join(', ')}`);
+        } catch(e) {
+            knownUsers = [];
+            addLog("⚠️ Yuzlar yuklanmadi: xatolik", true);
         }
     }
 
-    // 🔍 Tanilgan foydalanuvchini qidirish (eng yaqin masofa)
-    async function findMatchingUser(faceDescriptor) {
-        if (!knownUsers.length) {
-            // hech kim tanilmagan, demo uchun hech narsa qaytarmaymiz
-            return null;
+    // ---------- YUZNI RO‘YXATGA OLISH ----------
+    async function registerFace() {
+        const name = userNameInput.value.trim();
+        if (!name) {
+            setStatus("❌ Iltimos, ismingizni yozing!", 'error');
+            return;
         }
+        setStatus("📸 Yuzingiz aniqlanmoqda... bir oz turing", 'info');
+        
+        // Hozirgi videodan yuzlarni olish
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+            .withFaceLandmarks()
+            .withFaceDescriptors();
+        
+        if (detections.length === 0) {
+            setStatus("❌ Hech qanday yuz topilmadi. Kameraga to‘g‘ri qarang!", 'error');
+            return;
+        }
+        
+        const descriptor = detections[0].descriptor;
+        const newId = `user_${Date.now()}`;
+        knownUsers.push({
+            id: newId,
+            name: name,
+            descriptor: descriptor
+        });
+        saveKnownUsers();
+        setStatus(`✅ ${name} muvaffaqiyatli ro‘yxatdan o‘tdi! Endi yuzingiz avtomatik tanilinadi.`, 'success');
+        userNameInput.value = '';
+    }
+
+    // ---------- TANILGAN FOYDALANUVCHINI QIDIRISH ----------
+    async function findMatchedUser(descriptor) {
+        if (knownUsers.length === 0) return null;
         let bestMatch = null;
-        let bestDistance = 0.55;  // chegaraviy qiymat (0.6 dan kichik bo‘lsa o‘xshash)
+        let bestDistance = 0.55;  // chegara – 0.55 dan past bo‘lsa o‘xshash
         for (let user of knownUsers) {
-            if (!user.descriptor) continue;
-            const distance = faceapi.euclideanDistance(faceDescriptor, user.descriptor);
-            if (distance < bestDistance) {
-                bestDistance = distance;
+            const dist = faceapi.euclideanDistance(descriptor, user.descriptor);
+            if (dist < bestDistance) {
+                bestDistance = dist;
                 bestMatch = user;
             }
         }
         if (bestMatch) {
-            addLog(`🎯 Tanildi: ${bestMatch.name} (masofa: ${bestDistance.toFixed(3)})`);
+            addLog(`🔍 Tanildi: ${bestMatch.name} (masofa: ${bestDistance.toFixed(3)})`);
         }
         return bestMatch;
     }
 
-    // ------------------------------------------------------------
-    // 🎥 Asosiy tanish funksiyasi (intervalda ishlaydi)
-    // ------------------------------------------------------------
-    async function detectFaceAndAutoMark() {
-        if (!video || video.paused || video.ended || !video.videoWidth) {
+    // ---------- "KELDI" MA'LUMOTINI YUBORISH (BACKEND YOKI KONSOLE) ----------
+    async function markAttendance(user) {
+        if (lastMarkedId === user.id) {
+            // allaqachon belgilangan, qayta yubormaymiz
             return;
         }
-
-        try {
-            // yuzlarni deteksiya qilish (tezlik uchun tinyFaceDetector)
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptors();
-
-            if (detections.length === 0) {
-                // hech kim yo‘q
-                return;
+        
+        setStatus(`📤 ${user.name} uchun avtomatik "keldi" yuborilmoqda...`, 'info');
+        addLog(`👉 ${user.name} (${user.id}) → status: keldi`);
+        
+        // Agar backend URL berilgan bo‘lsa, yuboramiz
+        if (BACKEND_URL && BACKEND_URL !== "/api/attendance") { 
+            try {
+                const payload = {
+                    userId: user.id,
+                    name: user.name,
+                    status: "keldi",
+                    timestamp: new Date().toISOString()
+                };
+                const resp = await fetch(BACKEND_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const text = await resp.text();
+                let json = null;
+                try { json = JSON.parse(text); } catch(e) {}
+                if (!resp.ok) throw new Error(json?.message || text.slice(0,100));
+                setStatus(`✅ ${user.name} muvaffaqiyatli "keldi" deb belgilandi`, 'success');
+                addLog(`✅ Server javobi: OK`);
+                lastMarkedId = user.id;
+            } catch(err) {
+                setStatus(`❌ Xatolik: ${err.message}`, 'error');
+                addLog(`❌ Yuborishda xato: ${err.message}`, true);
             }
-
-            // birinchi yuzni olamiz
-            const descriptor = detections[0].descriptor;
-            const matchedUser = await findMatchingUser(descriptor);
-
-            if (matchedUser && matchedUser.id !== lastMarkedUserId) {
-                // Avtomatik belgilash (faqat bir marta)
-                lastMarkedUserId = matchedUser.id;
-                setStatusMessage(`🔔 ${matchedUser.name} aniqlandi → avtomatik "keldi" yuborilmoqda...`, 'info');
-                await sendAttendance(matchedUser.id, matchedUser.name);
-            } else if (matchedUser && matchedUser.id === lastMarkedUserId) {
-                // allaqachon belgilangan, qayta yubormaymiz
-                // statusni bezovta qilmaymiz
-            } else {
-                // tanilmagan yuz
-                if (detections.length > 0 && knownUsers.length > 0) {
-                    setStatusMessage("👤 Tanilmagan yuz, ro‘yxatdan o‘tkazilmagan", 'info');
-                }
-            }
-        } catch (err) {
-            console.error("detectFace error:", err);
-            addLog(`⚠️ Tanish vaqtida xatolik: ${err.message}`, true);
+        } else {
+            // Demo rejimi – faqat konsolga yozamiz
+            setStatus(`✅ ${user.name} ("keldi") – DEMO rejimida belgilandi`, 'success');
+            addLog(`✅ ${user.name} uchun "keldi" qayd etildi (backend yo‘q)`);
+            lastMarkedId = user.id;
         }
     }
 
-    // ------------------------------------------------------------
-    // 🚀 Kamera va modellarni ishga tushirish
-    // ------------------------------------------------------------
-    async function initCameraAndModels() {
-        setStatusMessage("📦 Yuz modellari yuklanmoqda... (Internet kerak)", 'info');
+    // ---------- ASOSIY TANISH FUNKSIYASI (INTERVAL) ----------
+    async function detectAndAutoMark() {
+        if (!video || video.paused || video.ended || !video.videoWidth) return;
+        
         try {
-            // face-api.js modellari (eng tez variant)
-            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/models';
+            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptors();
+            
+            if (detections.length === 0) return;
+            
+            const descriptor = detections[0].descriptor;
+            const matched = await findMatchedUser(descriptor);
+            
+            if (matched) {
+                await markAttendance(matched);
+            } else {
+                // tanilmagan yuz
+                if (knownUsers.length > 0) {
+                    setStatus("👤 Tanilmagan yuz. Iltimos, avval ro‘yxatdan o‘ting.", 'info');
+                }
+            }
+        } catch(err) {
+            console.error("Detect xatosi:", err);
+            addLog(`⚠️ Tekshiruv xatosi: ${err.message}`, true);
+        }
+    }
+
+    // ---------- MODELLARNI YUKLASH VA KAMERANI ISHGA TUSHIRISH ----------
+    async function initModelsAndCamera() {
+        setStatus("📦 Yuz tanish modellari yuklanmoqda... (ilk marotaba internet kerak)", 'info');
+        // TO‘G‘RI MODEL MANZILI (github raw – ishlaydi)
+        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        try {
             await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
             await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
             await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-            addLog("✅ Barcha modellar muvaffaqiyatli yuklandi");
-        } catch (err) {
-            setStatusMessage("❌ Modellarni yuklashda xatolik! Internet aloqasini tekshiring.", 'error');
+            addLog("✅ Barcha modellar yuklandi");
+        } catch(err) {
+            setStatus("❌ Modellarni yuklashda xatolik! Internetni tekshiring.", 'error');
             addLog(`❌ Model xatosi: ${err.message}`, true);
             return false;
         }
-
-        // Kamera ruxsati
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = stream;
@@ -353,49 +347,48 @@
                     resolve();
                 };
             });
-            setStatusMessage("📷 Kamera ishlamoqda. Yuz tanish avtomatik tarzda ishga tushadi.", 'success');
-            addLog("Kamera yoqildi, interval boshlandi.");
+            setStatus("📷 Kamera ishlayapti. Yuzingizni ro‘yxatdan o‘tkazing yoki tanish avtomatik ishlaydi.", 'success');
+            addLog("Kamera yoqildi.");
             return true;
-        } catch (err) {
-            setStatusMessage("❌ Kameraga ruxsat berilmadi yoki xato: " + err.message, 'error');
+        } catch(err) {
+            setStatus("❌ Kameraga ruxsat berilmadi: " + err.message, 'error');
             addLog(`❌ Kamera xatosi: ${err.message}`, true);
             return false;
         }
     }
 
-    // ------------------------------------------------------------
-    // 🔄 To‘liq tizimni ishga tushirish
-    // ------------------------------------------------------------
+    // ---------- TIZIMNI BOSHLASH ----------
     async function startSystem() {
-        if (intervalId) clearInterval(intervalId);
-        lastMarkedUserId = null;
-
-        // Taniqli foydalanuvchilarni yuklash (backend yoki local)
-        await loadKnownUsersFromBackend();
-
-        const cameraReady = await initCameraAndModels();
-        if (!cameraReady) return;
-
-        // interval bilan yuz tekshiruvi
-        intervalId = setInterval(() => {
-            detectFaceAndAutoMark();
-        }, CHECK_INTERVAL_MS);
+        if (recognitionInterval) clearInterval(recognitionInterval);
+        lastMarkedId = null;
+        loadKnownUsers();  // localStorage dan o‘qish
+        
+        const ok = await initModelsAndCamera();
+        if (!ok) return;
+        
+        recognitionInterval = setInterval(() => {
+            detectAndAutoMark();
+        }, CHECK_INTERVAL);
     }
 
-    // reset tugmasi
-    document.getElementById('resetBtn').addEventListener('click', async () => {
-        if (intervalId) clearInterval(intervalId);
+    // ---------- QAYTA BOSHLASH ----------
+    async function resetSystem() {
+        if (recognitionInterval) clearInterval(recognitionInterval);
         if (video.srcObject) {
             let tracks = video.srcObject.getTracks();
             tracks.forEach(t => t.stop());
         }
-        lastMarkedUserId = null;
-        addLog("🔄 Tizim qayta ishga tushirilmoqda...");
-        setStatusMessage("♻️ Qayta boshlash...", 'info');
+        lastMarkedId = null;
+        setStatus("♻️ Qayta ishga tushirilmoqda...", 'info');
+        addLog("🔄 Tizim qayta tiklandi");
         await startSystem();
-    });
+    }
 
-    // Start!
+    // Event listenerlar
+    registerBtn.addEventListener('click', registerFace);
+    resetBtn.addEventListener('click', resetSystem);
+    
+    // Boshlash
     startSystem();
 </script>
 </body>
