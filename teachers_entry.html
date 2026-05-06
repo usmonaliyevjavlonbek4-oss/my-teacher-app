@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O‘qituvchilar | Ma’lumot kiritish</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui; }
+        body { background: #eef2f7; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; border-radius: 2rem; padding: 1.5rem; }
+        h1 { background: linear-gradient(135deg, #1E3C72, #2A5298); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .dashboard { display: flex; flex-wrap: wrap; gap: 2rem; margin-bottom: 2rem; }
+        .camera-box { flex: 1.2; background: #f8fafc; border-radius: 1.5rem; padding: 1rem; }
+        .video-wrapper { background: #000; border-radius: 1rem; overflow: hidden; aspect-ratio: 4/3; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .btn-group { display: flex; gap: 10px; margin: 1rem 0; flex-wrap: wrap; }
+        button { background: #2c7da0; border: none; padding: 8px 18px; border-radius: 40px; color: white; cursor: pointer; font-weight: 600; }
+        .form-box { flex: 2; background: white; border-radius: 1.5rem; padding: 1rem; border: 1px solid #e4edf2; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 1rem; }
+        .input-field { display: flex; flex-direction: column; gap: 4px; }
+        .input-field label { font-weight: 600; font-size: 0.8rem; }
+        input, textarea { padding: 8px; border-radius: 1rem; border: 1px solid #cbdbe6; }
+        .teacher-list { max-height: 400px; overflow-y: auto; margin-top: 1rem; }
+        .teacher-card { background: #fff; border-radius: 1rem; padding: 0.8rem; display: flex; gap: 1rem; margin-bottom: 0.5rem; border: 1px solid #dfe8f0; align-items: center; }
+        .teacher-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
+        .filter-bar { display: flex; gap: 1rem; background: #f1f5f9; padding: 0.8rem; border-radius: 1rem; margin-bottom: 1rem; }
+        footer { text-align: center; margin-top: 2rem; font-size: 0.7rem; color: #5f7f9a; }
+        .required-star { color: #d9534f; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>👩‍🏫 O‘qituvchilar tizimi | Ma’lumot kiritish</h1>
+    <div class="dashboard">
+        <div class="camera-box">
+            <div class="video-wrapper"><video id="video" autoplay playsinline muted></video></div>
+            <div class="btn-group">
+                <button id="startCamBtn">📷 Kamerani yoqish</button>
+                <button id="snapBtn" disabled>📸 Rasmga olish</button>
+                <button id="resetImgBtn">🔄 Yangi rasm</button>
+            </div>
+            <div class="capture-preview"><p>📷 Olingan rasm:</p><img id="previewPhoto" style="max-width:100%; max-height:150px; border-radius:1rem;"></div>
+        </div>
+        <div class="form-box">
+            <h3>📋 O‘qituvchi ma'lumotlari</h3>
+            <div class="form-grid">
+                <div class="input-field"><label>Ismi *</label><input id="firstname" placeholder="Jasur"></div>
+                <div class="input-field"><label>Familiyasi *</label><input id="lastname" placeholder="Aliyev"></div>
+                <div class="input-field"><label>Telefon raqami *</label><input id="phone" placeholder="+998 90 123 45 67"></div>
+                <div class="input-field"><label>Fan (ixtiyoriy)</label><input id="subject" placeholder="Matematika"></div>
+                <div class="input-field"><label>Tug‘ilgan sana</label><input type="date" id="birthdate"></div>
+                <div class="input-field"><label>Manzil</label><input id="address" placeholder="Toshkent"></div>
+                <div class="input-field"><label>Qo‘shimcha</label><textarea id="notes" rows="2"></textarea></div>
+            </div>
+            <div class="btn-group">
+                <button id="saveTeacherBtn" disabled>💾 Saqlash</button>
+                <button id="clearFormBtn">🧹 Tozalash</button>
+            </div>
+        </div>
+    </div>
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="Qidiruv (ism yoki familiya)" style="flex:1">
+        <button id="resetFilterBtn">🔄 Tozalash</button>
+    </div>
+    <h3>👥 O‘qituvchilar ro‘yxati (<span id="teacherCount">0</span>)</h3>
+    <div id="teachersList" class="teacher-list"></div>
+    <footer>⚡ Barcha ma'lumotlar brauzer xotirasida (localStorage) saqlanadi. Kamera ruxsatini bering.</footer>
+</div>
+
+<script>
+    // ---------- DOM ----------
+    const video = document.getElementById('video');
+    const startCamBtn = document.getElementById('startCamBtn');
+    const snapBtn = document.getElementById('snapBtn');
+    const resetImgBtn = document.getElementById('resetImgBtn');
+    const previewPhoto = document.getElementById('previewPhoto');
+    const firstname = document.getElementById('firstname');
+    const lastname = document.getElementById('lastname');
+    const phone = document.getElementById('phone');
+    const subject = document.getElementById('subject');
+    const birthdate = document.getElementById('birthdate');
+    const address = document.getElementById('address');
+    const notes = document.getElementById('notes');
+    const saveBtn = document.getElementById('saveTeacherBtn');
+    const clearBtn = document.getElementById('clearFormBtn');
+    const searchInput = document.getElementById('searchInput');
+    const resetFilterBtn = document.getElementById('resetFilterBtn');
+    const teachersListDiv = document.getElementById('teachersList');
+    const teacherCountSpan = document.getElementById('teacherCount');
+
+    let currentStream = null;
+    let currentImageBase64 = null;
+    let teachersArray = [];
+    let editModeId = null;
+
+    // ----- LocalStorage -----
+    function loadTeachers() {
+        const stored = localStorage.getItem('teachers_db');
+        if(stored) {
+            try { teachersArray = JSON.parse(stored); } catch(e) { teachersArray = []; }
+        } else { teachersArray = []; }
+        renderFilteredList();
+    }
+    function saveToStorage() { localStorage.setItem('teachers_db', JSON.stringify(teachersArray)); }
+
+    function getFiltered() {
+        let filtered = [...teachersArray];
+        const term = searchInput.value.trim().toLowerCase();
+        if(term) filtered = filtered.filter(t => 
+            t.firstname?.toLowerCase().includes(term) || t.lastname?.toLowerCase().includes(term)
+        );
+        return filtered;
+    }
+
+    function renderFilteredList() {
+        const filtered = getFiltered();
+        teacherCountSpan.innerText = filtered.length;
+        if(filtered.length === 0) {
+            teachersListDiv.innerHTML = '<div style="text-align:center; padding:2rem; color:#6b8da8;">📭 Hech qanday o‘qituvchi yo‘q.</div>';
+            return;
+        }
+        let html = '';
+        filtered.forEach(t => {
+            const fullName = `${t.firstname || ''} ${t.lastname || ''}`.trim();
+            const imgSrc = t.imageBase64 || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%23bdd4e4%22/%3E%3Ctext x=%2250%22 y=%2270%22 text-anchor=%22middle%22 fill=%22%23333%22 font-size=%2240%22%3E📷%3C/text%3E%3C/svg%3E';
+            html += `
+                <div class="teacher-card" data-id="${t.id}">
+                    <img class="teacher-img" src="${imgSrc}" onerror="this.src='data:image/svg+xml,%3Csvg...%3E'">
+                    <div style="flex:1">
+                        <div><b>${escapeHtml(fullName)}</b></div>
+                        <div>📞 ${t.phone || '-'} | ${t.subject ? '📚 '+t.subject : ''}</div>
+                        <div>${t.address || ''}</div>
+                    </div>
+                    <div>
+                        <button class="edit-btn" data-id="${t.id}" style="background:#6c757d; padding:4px 12px;">✏️</button>
+                        <button class="delete-btn" data-id="${t.id}" style="background:#dc3545; padding:4px 12px;">🗑</button>
+                    </div>
+                </div>
+            `;
+        });
+        teachersListDiv.innerHTML = html;
+        document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => editTeacher(btn.dataset.id)));
+        document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteTeacher(btn.dataset.id)));
+    }
+
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+    function editTeacher(id) {
+        const teacher = teachersArray.find(t => t.id === id);
+        if(!teacher) return;
+        editModeId = id;
+        firstname.value = teacher.firstname || '';
+        lastname.value = teacher.lastname || '';
+        phone.value = teacher.phone || '';
+        subject.value = teacher.subject || '';
+        birthdate.value = teacher.birthdate || '';
+        address.value = teacher.address || '';
+        notes.value = teacher.notes || '';
+        currentImageBase64 = teacher.imageBase64;
+        previewPhoto.src = currentImageBase64;
+        saveBtn.disabled = false;
+        saveBtn.textContent = "✏️ Yangilash";
+    }
+
+    function deleteTeacher(id) {
+        if(confirm("O‘qituvchini o‘chirish?")) {
+            teachersArray = teachersArray.filter(t => t.id !== id);
+            saveToStorage();
+            renderFilteredList();
+            if(editModeId === id) resetForm();
+        }
+    }
+
+    function resetForm() {
+        firstname.value = ''; lastname.value = ''; phone.value = ''; subject.value = ''; birthdate.value = ''; address.value = ''; notes.value = '';
+        currentImageBase64 = null; previewPhoto.src = ''; saveBtn.disabled = true; editModeId = null;
+        saveBtn.textContent = "💾 Saqlash";
+    }
+
+    function saveOrUpdate() {
+        const ism = firstname.value.trim();
+        const fam = lastname.value.trim();
+        const tel = phone.value.trim();
+        if(!ism || !fam || !tel) { alert("Ism, familiya va telefon raqami majburiy!"); return; }
+        if(!currentImageBase64) { alert("Avval rasmga oling!"); return; }
+        const teacherData = {
+            id: editModeId || Date.now() + '-' + Math.random().toString(36).substr(2,6),
+            firstname: ism, lastname: fam, phone: tel, subject: subject.value.trim(),
+            birthdate: birthdate.value, address: address.value.trim(), notes: notes.value.trim(),
+            imageBase64: currentImageBase64, createdAt: new Date().toISOString()
+        };
+        if(editModeId) {
+            const idx = teachersArray.findIndex(t => t.id === editModeId);
+            if(idx !== -1) teachersArray[idx] = teacherData;
+            else teachersArray.push(teacherData);
+            alert("Yangilandi");
+        } else {
+            teachersArray.unshift(teacherData);
+            alert("Qo‘shildi");
+        }
+        saveToStorage();
+        renderFilteredList();
+        resetForm();
+    }
+
+    // ----- Kamera -----
+    async function startCamera() {
+        if(currentStream) currentStream.getTracks().forEach(t => t.stop());
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            currentStream = stream;
+            video.srcObject = stream;
+            await video.play();
+            snapBtn.disabled = false;
+        } catch(err) { alert("Kamera xatosi"); }
+    }
+    function capturePhoto() {
+        if(!video.srcObject) return;
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+        currentImageBase64 = canvas.toDataURL('image/jpeg',0.85);
+        previewPhoto.src = currentImageBase64;
+        saveBtn.disabled = false;
+    }
+    function resetImage() { currentImageBase64 = null; previewPhoto.src = ''; saveBtn.disabled = true; if(editModeId) resetForm(); }
+
+    // ----- Eventlar -----
+    startCamBtn.onclick = startCamera;
+    snapBtn.onclick = capturePhoto;
+    resetImgBtn.onclick = resetImage;
+    saveBtn.onclick = saveOrUpdate;
+    clearBtn.onclick = resetForm;
+    searchInput.oninput = renderFilteredList;
+    resetFilterBtn.onclick = () => { searchInput.value = ''; renderFilteredList(); };
+    loadTeachers();
+    window.onbeforeunload = () => { if(currentStream) currentStream.getTracks().forEach(t => t.stop()); };
+</script>
+</body>
+</html>
