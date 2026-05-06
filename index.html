@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>O‘qituvchilar | Yuz tanish + avtomatik davomat</title>
+    <title>O‘qituvchilar | Avtomatik davomat</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui; }
         body { background: #eef2f7; padding: 20px; }
@@ -22,6 +22,7 @@
         .badge-late { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 20px; }
         .time-badge { background: #6c757d; color: white; padding: 2px 6px; border-radius: 20px; font-size: 0.7rem; margin-left: 8px; }
         .status-panel { background: #eef2fa; border-radius: 1rem; padding: 0.5rem; margin: 0.5rem 0; font-size: 0.8rem; }
+        .refresh-btn { background: #6c757d; }
         .close-btn { background: #dc3545; }
         footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #5f7f9a; }
     </style>
@@ -35,25 +36,25 @@
             <div class="video-wrapper"><video id="video" autoplay playsinline muted></video></div>
             <div class="status-panel" id="statusMsg">⏳ Modellar yuklanmoqda...</div>
             <button id="startCamBtn">🎥 Kamerani yoqish</button>
-            <button id="refreshBtn">🔄 Bazani yangilash</button>
+            <button id="refreshBtn" class="refresh-btn">🔄 Bazani yangilash</button>
             <button id="closeDayBtn" class="close-btn">🔒 Bazani yopish (admin)</button>
         </div>
         <div class="info-area">
-            <h3>✅ So‘nggi tanilgan</h3>
+            <h3>✅ Tanilgan o‘qituvchi</h3>
             <div id="recogResult">🤷‍♂️ Hech kim tanilmadi</div>
-            <h3>📅 Bugungi davomat</h3>
+            <h3>📅 Bugungi davomat <span id="closedBadge"></span></h3>
             <div id="attendanceList" class="attendance-list">Yuklanmoqda...</div>
         </div>
     </div>
-    <footer>⚡ Yuz tanilganda avtomatik ravishda “Keldi” deb belgilanadi (kuniga bir marta).</footer>
+    <footer>⚡ Yuz tanilganda avtomatik “Keldi” belgilanadi (vaqt bilan). Kech kelganlar 09:00 dan keyin belgilanadi.</footer>
 </div>
 
 <script>
     // ================= KONFIGURATSIYA =================
-    const ADMIN_CHAT_ID = "7702180390";
     const LATE_TIME = "09:00:00";
+    const ADMIN_CHAT_ID = "7702180390";
 
-    // ================= DOM =================
+    // ================= DOM ELEMENTLARI =================
     const video = document.getElementById('video');
     const startCamBtn = document.getElementById('startCamBtn');
     const refreshBtn = document.getElementById('refreshBtn');
@@ -61,14 +62,15 @@
     const statusDiv = document.getElementById('statusMsg');
     const recogResultDiv = document.getElementById('recogResult');
     const attendanceListDiv = document.getElementById('attendanceList');
+    const closedBadgeSpan = document.getElementById('closedBadge');
 
     let currentStream = null;
     let modelsLoaded = false;
     let teachersDB = [];
-    let enrolledFaces = [];
+    let enrolledFaces = [];      // { descriptor, teacher }
     let recognitionInterval = null;
 
-    // ================= Yordamchi funksiyalar (localStorage) =================
+    // ================= YORDAMCHI FUNKSIYALAR =================
     function getTodayKey() { return new Date().toISOString().slice(0,10); }
 
     function loadAttendance() {
@@ -89,113 +91,26 @@
         return att[today] && att[today]._closed === true;
     }
 
-    function loadTeachersFromStorage() {
-        const stored = localStorage.getItem('teachers_db');
-        if(stored) {
-            try { return JSON.parse(stored); } catch(e) { return []; }
-        }
-        return [];
-    }
-
-    // ================= Avtomatik belgilash (tanilganda darhol) =================
-    async function autoMarkPresent(teacher) {
-        if (isTodayClosed()) return false;
-        const today = getTodayKey();
-        let att = loadAttendance();
-        if (!att[today]) att[today] = {};
-        if (att[today][teacher.id]) return false; // allaqachon belgilangan
-
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        att[today][teacher.id] = { time: timeStr, timestamp: now.toISOString() };
-        saveAttendance(att);
-        renderAttendance();
-        return true;
-    }
-
-    // ================= Hisobot matnini yaratish =================
-    function formatReport(teachers, attendance) {
-        const today = getTodayKey();
-        const todayData = attendance[today] || {};
-        const isClosed = todayData._closed === true;
-        let report = `📊 *${today} kunlik davomat hisoboti*\n`;
-        report += isClosed ? "🔒 *Baza yopilgan* (yakuniy)\n\n" : "🟡 *Baza hali yopilmagan*\n\n";
-        let present = [], absent = [], late = [];
-        teachers.forEach(t => {
-            const record = todayData[t.id];
-            const fullName = `${t.firstname || ''} ${t.lastname || ''}`;
-            const phone = t.phone || '';
-            if (record) {
-                const timeStr = record.time || '';
-                const isLate = timeStr > LATE_TIME;
-                const entry = `• ${fullName} (${phone}) – kelgan vaqt: ${timeStr}`;
-                if (isLate) late.push(entry + " ⚠️ (kech)");
-                else present.push(entry);
-            } else {
-                absent.push(`• ${fullName} (${phone})`);
-            }
-        });
-        report += `✅ *Kelganlar* (${present.length}):\n` + (present.join("\n") || "Hech kim kelmagan") + "\n\n";
-        if (late.length) report += `⚠️ *Kech kelganlar* (${late.length}):\n` + late.join("\n") + "\n\n";
-        report += `❌ *Kelmaganlar* (${absent.length}):\n` + (absent.join("\n") || "Hamma kelgan");
-        return report;
-    }
-
-    // ================= Telegram’ga yuborish (Serverless funksiya orqali) =================
-    async function sendReportToTelegram() {
-        const teachers = loadTeachersFromStorage();
-        const attendance = loadAttendance();
-        if (!teachers.length) {
-            alert("O‘qituvchilar bazasi bo‘sh!");
-            return false;
-        }
-        const report = formatReport(teachers, attendance);
-        try {
-            const response = await fetch('/api/send-report', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chatId: ADMIN_CHAT_ID, message: report })
-            });
-            const result = await response.json();
-            return result.success === true;
-        } catch (err) {
-            console.error(err);
-            return false;
-        }
-    }
-
-    // ================= Bazani yopish =================
-    async function closeDay() {
-        if (isTodayClosed()) {
-            alert("Bugungi baza allaqachon yopilgan!");
-            return;
-        }
-        if (!confirm("Bugungi davomatni yakunlab, bazani yopishni xohlaysizmi? Hisobot yuboriladi.")) return;
-        const today = getTodayKey();
-        let att = loadAttendance();
-        if (!att[today]) att[today] = {};
-        att[today]._closed = true;
-        saveAttendance(att);
-        renderAttendance();
-        const ok = await sendReportToTelegram();
-        if (ok) alert("✅ Baza yopildi va hisobot yuborildi!");
-        else alert("❌ Hisobot yuborilmadi (server xatosi)");
-    }
-
-    // ================= UI: davomat jadvali =================
+    // ================= DAVOMAT JADVALINI KO‘RSATISH =================
     function renderAttendance() {
         const today = getTodayKey();
         const att = loadAttendance();
         const todayData = att[today] || {};
         const isClosed = todayData._closed === true;
-        const teachers = loadTeachersFromStorage();
-        if (teachers.length === 0) {
+        if (isClosed) {
+            closedBadgeSpan.innerHTML = '<span style="background:#6c757d; padding:2px 8px; border-radius:20px; font-size:0.7rem;">✅ Baza yopilgan</span>';
+        } else {
+            closedBadgeSpan.innerHTML = '';
+        }
+
+        if (teachersDB.length === 0) {
             attendanceListDiv.innerHTML = '<div>Hali o‘qituvchilar bazasi yuklanmagan.</div>';
             return;
         }
+
         let html = '';
-        teachers.forEach(t => {
-            const record = todayData[t.id];
+        teachersDB.forEach(teacher => {
+            const record = todayData[teacher.id];
             const isPresent = !!record;
             let timeStr = '', isLate = false, statusText = '';
             if (isPresent) {
@@ -209,7 +124,7 @@
             html += `
                 <div class="attendance-item">
                     <div>
-                        <b>${t.firstname} ${t.lastname}</b> (${t.phone})
+                        <b>${teacher.firstname} ${teacher.lastname}</b> (${teacher.phone})
                         ${isPresent ? `<span class="time-badge">⏰ ${timeStr}</span>` : ''}
                         ${isPresent && isLate ? `<span class="time-badge" style="background:#ff9800;">⚠️ Kech</span>` : ''}
                     </div>
@@ -220,7 +135,98 @@
         attendanceListDiv.innerHTML = html;
     }
 
-    // ================= Yuz tanish + avtomatik belgilash =================
+    // ================= AVTOMATIK "KELDI" BELGILASH =================
+    function autoMarkAttendance(teacher) {
+        if (isTodayClosed()) {
+            console.log("Bugun baza yopilgan, belgilash mumkin emas");
+            return false;
+        }
+        const today = getTodayKey();
+        let att = loadAttendance();
+        if (!att[today]) att[today] = {};
+        if (att[today][teacher.id]) return false; // allaqachon belgilangan
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        att[today][teacher.id] = { time: timeStr, timestamp: now.toISOString() };
+        saveAttendance(att);
+        renderAttendance();
+        return true;
+    }
+
+    // ================= HISOBOT MATNINI TAYYORLASH =================
+    function formatReport(teachers, attendance) {
+        const today = getTodayKey();
+        const todayData = attendance[today] || {};
+        const isClosed = todayData._closed === true;
+        let report = `📊 *${today} kunlik davomat hisoboti*\n`;
+        report += isClosed ? "🔒 *Baza yopilgan* (yakuniy)\n\n" : "🟡 *Baza hali yopilmagan*\n\n";
+        
+        let presentList = [], absentList = [], lateList = [];
+        teachers.forEach(teacher => {
+            const record = todayData[teacher.id];
+            const fullName = `${teacher.firstname} ${teacher.lastname}`;
+            const phone = teacher.phone;
+            if (record) {
+                const timeStr = record.time || '';
+                const isLate = timeStr > LATE_TIME;
+                const entry = `• ${fullName} (${phone}) – kelgan vaqt: ${timeStr}`;
+                if (isLate) lateList.push(entry + " ⚠️ (kech)");
+                else presentList.push(entry);
+            } else {
+                absentList.push(`• ${fullName} (${phone})`);
+            }
+        });
+        report += `✅ *Kelganlar* (${presentList.length}):\n` + (presentList.join("\n") || "Hech kim kelmagan") + "\n\n";
+        if (lateList.length) report += `⚠️ *Kech kelganlar* (${lateList.length}):\n` + lateList.join("\n") + "\n\n";
+        report += `❌ *Kelmaganlar* (${absentList.length}):\n` + (absentList.join("\n") || "Hamma kelgan") + "\n";
+        return report;
+    }
+
+    // ================= TELEGRAM BOTGA HISOBOT YUBORISH =================
+    async function sendReportToTelegram(message) {
+        try {
+            const response = await fetch('/api/send-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatId: ADMIN_CHAT_ID, message: message })
+            });
+            const result = await response.json();
+            if (result.success) {
+                alert("✅ Hisobot Telegram botga yuborildi!");
+                return true;
+            } else {
+                alert("❌ Xatolik: " + (result.error || "Noma'lum xato"));
+                return false;
+            }
+        } catch (err) {
+            console.error(err);
+            alert("❌ Hisobot yuborishda xatolik: " + err.message);
+            return false;
+        }
+    }
+
+    // ================= BAZANI YOPISH =================
+    async function closeDay() {
+        if (isTodayClosed()) {
+            alert("Bugungi baza allaqachon yopilgan!");
+            return;
+        }
+        if (!confirm("Bugungi davomatni yakunlab, bazani yopishni xohlaysizmi? Hisobot admin Telegram chatiga yuboriladi.")) return;
+
+        const today = getTodayKey();
+        let att = loadAttendance();
+        if (!att[today]) att[today] = {};
+        att[today]._closed = true;
+        saveAttendance(att);
+        renderAttendance();
+
+        // Hisobot matnini tayyorlash va yuborish
+        const report = formatReport(teachersDB, loadAttendance());
+        await sendReportToTelegram(report);
+    }
+
+    // ================= YUZ TANISH FUNKSIYALARI =================
     async function loadModels() {
         statusDiv.innerHTML = "📥 Yuz modellari yuklanmoqda...";
         try {
@@ -236,12 +242,15 @@
     }
 
     async function loadTeachersAndEnroll() {
-        teachersDB = loadTeachersFromStorage();
+        const stored = localStorage.getItem('teachers_db');
+        if (!stored) {
+            statusDiv.innerHTML = "⚠️ Hech qanday o‘qituvchi topilmadi. Avval ma’lumot kiritish sahifasiga o‘ting.";
+            teachersDB = []; enrolledFaces = []; renderAttendance(); return;
+        }
+        try { teachersDB = JSON.parse(stored); } catch(e) { teachersDB = []; }
         if (!teachersDB.length) {
-            statusDiv.innerHTML = "⚠️ O‘qituvchilar bazasi bo‘sh. Avval ma’lumot kiritish sahifasidan qo‘shing.";
-            enrolledFaces = [];
-            renderAttendance();
-            return;
+            statusDiv.innerHTML = "⚠️ O‘qituvchilar bazasi bo‘sh.";
+            enrolledFaces = []; renderAttendance(); return;
         }
         statusDiv.innerHTML = `👥 ${teachersDB.length} nafar o‘qituvchi topildi. Yuz vektorlari hisoblanmoqda...`;
         enrolledFaces = [];
@@ -298,10 +307,11 @@
                         🎯 Ishonchlilik: ${confidence}%
                     </div>
                 `;
-                // Avtomatik belgilash (agar bugun belgilanmagan bo‘lsa)
-                const marked = await autoMarkPresent(bestMatch);
+                // Avtomatik "keldi" belgilash
+                const marked = autoMarkAttendance(bestMatch);
                 if (marked) {
-                    statusDiv.innerHTML += `<br>✅ ${bestMatch.firstname} ${bestMatch.lastname} keldi deb belgilandi (avtomatik)`;
+                    statusDiv.innerHTML = `✅ ${bestMatch.firstname} ${bestMatch.lastname} avtomatik keldi deb belgilandi! Vaqt: ${new Date().toLocaleTimeString()}`;
+                    setTimeout(() => { statusDiv.innerHTML = `✅ Tayyor! ${enrolledFaces.length} / ${teachersDB.length} o‘qituvchi tanishga tayyor.`; }, 3000);
                 }
             } else {
                 recogResultDiv.innerHTML = "❌ Hech qanday moslik topilmadi";
@@ -309,9 +319,9 @@
         } catch(err) { console.warn(err); }
     }
 
-    // ================= Kamera va tsikl =================
+    // ================= KAMERA VA LOOP =================
     async function startCamera() {
-        if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
+        if (currentStream) currentStream.getTracks().forEach(t => t.stop());
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
             currentStream = stream;
@@ -340,7 +350,7 @@
         if (currentStream) startRecognitionLoop();
     }
 
-    // ================= Event listenerlar =================
+    // ================= EVENTLAR =================
     startCamBtn.onclick = startCamera;
     refreshBtn.onclick = refreshData;
     closeDayBtn.onclick = closeDay;
