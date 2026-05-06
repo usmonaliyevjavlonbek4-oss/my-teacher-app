@@ -13,7 +13,7 @@
         .video-wrapper { background: #000; border-radius: 1rem; overflow: hidden; aspect-ratio: 4/3; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .info-area { flex: 1; background: white; border-radius: 1.5rem; padding: 1rem; border: 1px solid #e4edf2; }
-        button { background: #2c7da0; border: none; padding: 8px 18px; border-radius: 40px; color: white; cursor: pointer; font-weight: 600; margin-top: 10px; }
+        button { background: #2c7da0; border: none; padding: 8px 18px; border-radius: 40px; color: white; cursor: pointer; font-weight: 600; margin-top: 10px; margin-right: 8px; }
         .teacher-card { background: #f1f5f9; border-radius: 1rem; padding: 1rem; margin-bottom: 1rem; }
         .attendance-list { max-height: 300px; overflow-y: auto; margin-top: 1rem; }
         .attendance-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #ddd; align-items: center; }
@@ -24,6 +24,7 @@
         .status-panel { background: #eef2fa; border-radius: 1rem; padding: 0.5rem; margin: 0.5rem 0; font-size: 0.8rem; }
         .refresh-btn { background: #6c757d; }
         .close-btn { background: #dc3545; }
+        .open-btn { background: #28a745; }
         footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #5f7f9a; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
@@ -35,9 +36,12 @@
         <div class="camera-area">
             <div class="video-wrapper"><video id="video" autoplay playsinline muted></video></div>
             <div class="status-panel" id="statusMsg">⏳ Modellar yuklanmoqda...</div>
-            <button id="startCamBtn">🎥 Kamerani yoqish</button>
-            <button id="refreshBtn" class="refresh-btn">🔄 Bazani yangilash</button>
-            <button id="closeDayBtn" class="close-btn">🔒 Bazani yopish (admin)</button>
+            <div>
+                <button id="startCamBtn">🎥 Kamerani yoqish</button>
+                <button id="refreshBtn" class="refresh-btn">🔄 Bazani yangilash</button>
+                <button id="closeDayBtn" class="close-btn">🔒 Bazani yopish</button>
+                <button id="openDayBtn" class="open-btn">🔓 Bazani ochish (reset)</button>
+            </div>
         </div>
         <div class="info-area">
             <h3>✅ Tanilgan o‘qituvchi</h3>
@@ -59,6 +63,7 @@
     const startCamBtn = document.getElementById('startCamBtn');
     const refreshBtn = document.getElementById('refreshBtn');
     const closeDayBtn = document.getElementById('closeDayBtn');
+    const openDayBtn = document.getElementById('openDayBtn');
     const statusDiv = document.getElementById('statusMsg');
     const recogResultDiv = document.getElementById('recogResult');
     const attendanceListDiv = document.getElementById('attendanceList');
@@ -124,7 +129,7 @@
             html += `
                 <div class="attendance-item">
                     <div>
-                        <b>${teacher.firstname} ${teacher.lastname}</b> (${teacher.phone})
+                        <b>${escapeHtml(teacher.firstname)} ${escapeHtml(teacher.lastname)}</b> (${escapeHtml(teacher.phone)})
                         ${isPresent ? `<span class="time-badge">⏰ ${timeStr}</span>` : ''}
                         ${isPresent && isLate ? `<span class="time-badge" style="background:#ff9800;">⚠️ Kech</span>` : ''}
                     </div>
@@ -134,6 +139,8 @@
         });
         attendanceListDiv.innerHTML = html;
     }
+
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
     // ================= AVTOMATIK "KELDI" BELGILASH =================
     function autoMarkAttendance(teacher) {
@@ -221,9 +228,27 @@
         saveAttendance(att);
         renderAttendance();
 
-        // Hisobot matnini tayyorlash va yuborish
         const report = formatReport(teachersDB, loadAttendance());
         await sendReportToTelegram(report);
+    }
+
+    // ================= BAZANI OCHISH (RESET) =================
+    async function openDay() {
+        if (!isTodayClosed()) {
+            alert("Baza hali yopilmagan. Yopilgan bazani ochishingiz mumkin.");
+            return;
+        }
+        if (!confirm("Bugungi baza ochiladi va barcha “keldi” belgilari tozalanadi. Davomat qaytadan boshlanadi. Davom etilsinmi?")) return;
+
+        const today = getTodayKey();
+        let att = loadAttendance();
+        if (!att[today]) att[today] = {};
+        // Barcha o‘quvchilarning bugungi yozuvlarini o‘chiramiz va _closed flag ni olib tashlaymiz
+        att[today] = {};  // butunlay tozalaymiz
+        // Eslatma: agar boshqa kunlar saqlanib qolishi kerak bo‘lsa, faqat shu kunni tozalaymiz
+        saveAttendance(att);
+        renderAttendance();
+        alert("✅ Baza ochildi va barcha keldi belgilari tozalandi. Endi yuz tanilganda qaytadan belgilash mumkin.");
     }
 
     // ================= YUZ TANISH FUNKSIYALARI =================
@@ -301,13 +326,12 @@
                 const confidence = Math.floor((1 - bestDistance) * 100);
                 recogResultDiv.innerHTML = `
                     <div class="teacher-card">
-                        <b>${bestMatch.firstname} ${bestMatch.lastname}</b><br>
-                        📞 ${bestMatch.phone}<br>
-                        🧑‍🏫 Fan: ${bestMatch.subject || '-'}<br>
+                        <b>${escapeHtml(bestMatch.firstname)} ${escapeHtml(bestMatch.lastname)}</b><br>
+                        📞 ${escapeHtml(bestMatch.phone)}<br>
+                        🧑‍🏫 Fan: ${escapeHtml(bestMatch.subject || '-')}<br>
                         🎯 Ishonchlilik: ${confidence}%
                     </div>
                 `;
-                // Avtomatik "keldi" belgilash
                 const marked = autoMarkAttendance(bestMatch);
                 if (marked) {
                     statusDiv.innerHTML = `✅ ${bestMatch.firstname} ${bestMatch.lastname} avtomatik keldi deb belgilandi! Vaqt: ${new Date().toLocaleTimeString()}`;
@@ -354,6 +378,7 @@
     startCamBtn.onclick = startCamera;
     refreshBtn.onclick = refreshData;
     closeDayBtn.onclick = closeDay;
+    openDayBtn.onclick = openDay;
 
     window.onbeforeunload = () => { stopTracks(); };
     loadModels();
