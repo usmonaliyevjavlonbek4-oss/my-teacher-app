@@ -2,381 +2,351 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Avtomatik davomat | Yuz tanish</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O‘qituvchilar | Yuz tanish + avtomatik davomat</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        video {
-            border-radius: 16px;
-            border: 2px solid #ddd;
-            width: 100%;
-            max-width: 640px;
-            background: #000;
-            transform: scaleX(-1); /* oyna effekti */
-        }
-        #status {
-            margin: 20px auto;
-            padding: 12px;
-            max-width: 600px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            font-size: 18px;
-            font-weight: 500;
-        }
-        .success {
-            background: #dcfce7;
-            color: #15803d;
-            border-left: 4px solid #22c55e;
-        }
-        .error {
-            background: #fee2e2;
-            color: #b91c1c;
-            border-left: 4px solid #ef4444;
-        }
-        .info {
-            background: #e0f2fe;
-            color: #0369a1;
-            border-left: 4px solid #0ea5e9;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin: 10px 8px;
-            border: none;
-            border-radius: 40px;
-            background: #1e88e5;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        button:active {
-            transform: scale(0.96);
-        }
-        .register-area {
-            margin: 20px 0;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        input {
-            padding: 10px 16px;
-            font-size: 16px;
-            border-radius: 40px;
-            border: 1px solid #ccc;
-            width: 200px;
-        }
-        #logs {
-            background: #1e1e1e;
-            color: #0f0;
-            font-family: monospace;
-            padding: 12px;
-            text-align: left;
-            border-radius: 12px;
-            max-width: 640px;
-            margin: 20px auto 0;
-            font-size: 13px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        h2 {
-            margin-top: 0;
-        }
-        hr {
-            margin: 20px 0;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui; }
+        body { background: #eef2f7; padding: 20px; }
+        .container { max-width: 1400px; margin: auto; background: white; border-radius: 2rem; padding: 1.5rem; }
+        .two-cols { display: flex; flex-wrap: wrap; gap: 2rem; }
+        .camera-area { flex: 1.5; background: #f8fafc; border-radius: 1.5rem; padding: 1rem; }
+        .video-wrapper { background: #000; border-radius: 1rem; overflow: hidden; aspect-ratio: 4/3; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .info-area { flex: 1; background: white; border-radius: 1.5rem; padding: 1rem; border: 1px solid #e4edf2; }
+        button { background: #2c7da0; border: none; padding: 8px 18px; border-radius: 40px; color: white; cursor: pointer; font-weight: 600; margin-top: 10px; }
+        .teacher-card { background: #f1f5f9; border-radius: 1rem; padding: 1rem; margin-bottom: 1rem; }
+        .attendance-list { max-height: 300px; overflow-y: auto; margin-top: 1rem; }
+        .attendance-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #ddd; align-items: center; }
+        .badge-present { background: #28a745; color: white; padding: 2px 8px; border-radius: 20px; }
+        .badge-absent { background: #dc3545; color: white; padding: 2px 8px; border-radius: 20px; }
+        .badge-late { background: #ffc107; color: #333; padding: 2px 8px; border-radius: 20px; }
+        .time-badge { background: #6c757d; color: white; padding: 2px 6px; border-radius: 20px; font-size: 0.7rem; margin-left: 8px; }
+        .status-panel { background: #eef2fa; border-radius: 1rem; padding: 0.5rem; margin: 0.5rem 0; font-size: 0.8rem; }
+        .close-btn { background: #dc3545; }
+        footer { text-align: center; margin-top: 1.5rem; font-size: 0.7rem; color: #5f7f9a; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
 <div class="container">
-    <h2>📸 Avtomatik davomat tizimi</h2>
-    <p>✅ O‘qituvchi yuzi tanilgandan so‘ng <strong>hech qanday tugma bosmasdan</strong> "keldi" deb belgilanadi.</p>
-
-    <video id="video" width="640" height="480" autoplay muted playsinline></video>
-
-    <div id="status">⚙️ Modellar yuklanmoqda...</div>
-
-    <div class="register-area">
-        <input type="text" id="teacherName" placeholder="O‘qituvchi ismi" autocomplete="off">
-        <button id="registerBtn">📝 Yuzni ro‘yxatga olish</button>
-        <button id="resetBtn">🔄 Qayta boshlash</button>
+    <h1>🧑‍🏫 O‘qituvchilar – avtomatik davomat</h1>
+    <div class="two-cols">
+        <div class="camera-area">
+            <div class="video-wrapper"><video id="video" autoplay playsinline muted></video></div>
+            <div class="status-panel" id="statusMsg">⏳ Modellar yuklanmoqda...</div>
+            <button id="startCamBtn">🎥 Kamerani yoqish</button>
+            <button id="refreshBtn">🔄 Bazani yangilash</button>
+            <button id="closeDayBtn" class="close-btn">🔒 Bazani yopish (admin)</button>
+        </div>
+        <div class="info-area">
+            <h3>✅ So‘nggi tanilgan</h3>
+            <div id="recogResult">🤷‍♂️ Hech kim tanilmadi</div>
+            <h3>📅 Bugungi davomat</h3>
+            <div id="attendanceList" class="attendance-list">Yuklanmoqda...</div>
+        </div>
     </div>
-
-    <div id="logs">📋 Jarayonlar:<br></div>
+    <footer>⚡ Yuz tanilganda avtomatik ravishda “Keldi” deb belgilanadi (kuniga bir marta).</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-    // ---------- SOZLAMALAR ----------
-    const BACKEND_URL = "/api/attendance";   // O‘z backend manzilingizni yozing (agar bo‘lmasa, demo)
-    const CHECK_INTERVAL = 2000;             // har 2 sekundda tekshiring
-    let intervalId = null;
-    let lastMarkedTeacherId = null;           // bir marta belgilangan o‘qituvchi
+    // ================= KONFIGURATSIYA =================
+    const ADMIN_CHAT_ID = "7702180390";
+    const LATE_TIME = "09:00:00";
 
+    // ================= DOM =================
     const video = document.getElementById('video');
-    const statusDiv = document.getElementById('status');
-    const logsDiv = document.getElementById('logs');
-    const teacherNameInput = document.getElementById('teacherName');
-    const registerBtn = document.getElementById('registerBtn');
-    const resetBtn = document.getElementById('resetBtn');
+    const startCamBtn = document.getElementById('startCamBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const closeDayBtn = document.getElementById('closeDayBtn');
+    const statusDiv = document.getElementById('statusMsg');
+    const recogResultDiv = document.getElementById('recogResult');
+    const attendanceListDiv = document.getElementById('attendanceList');
 
-    // Ro‘yxatdagi taniqli yuzlar (localStorage da saqlanadi)
-    let knownTeachers = [];  // [{ id, name, descriptor: Float32Array }]
+    let currentStream = null;
+    let modelsLoaded = false;
+    let teachersDB = [];
+    let enrolledFaces = [];
+    let recognitionInterval = null;
 
-    // ---------- Yordamchi funksiyalar ----------
-    function addLog(msg, isError = false) {
-        const p = document.createElement('div');
-        p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-        p.style.color = isError ? '#ffb4b4' : '#aaffaa';
-        p.style.marginBottom = '4px';
-        logsDiv.appendChild(p);
-        logsDiv.scrollTop = logsDiv.scrollHeight;
-        console.log(msg);
+    // ================= Yordamchi funksiyalar (localStorage) =================
+    function getTodayKey() { return new Date().toISOString().slice(0,10); }
+
+    function loadAttendance() {
+        const stored = localStorage.getItem('teachers_attendance');
+        if(stored) {
+            try { return JSON.parse(stored); } catch(e) { return {}; }
+        }
+        return {};
     }
 
-    function setStatus(text, type = 'info') {
-        statusDiv.innerHTML = text;
-        statusDiv.className = type;
-        addLog(text, type === 'error');
+    function saveAttendance(att) {
+        localStorage.setItem('teachers_attendance', JSON.stringify(att));
     }
 
-    // ---------- Yuzlarni localStorage ga saqlash va yuklash ----------
-    function saveTeachers() {
-        const toSave = knownTeachers.map(t => ({
-            id: t.id,
-            name: t.name,
-            descriptor: Array.from(t.descriptor)
-        }));
-        localStorage.setItem('face_teachers', JSON.stringify(toSave));
-        addLog(`💾 ${knownTeachers.length} ta o‘qituvchi saqlandi`);
+    function isTodayClosed() {
+        const att = loadAttendance();
+        const today = getTodayKey();
+        return att[today] && att[today]._closed === true;
     }
 
-    function loadTeachers() {
-        const raw = localStorage.getItem('face_teachers');
-        if (!raw) {
-            knownTeachers = [];
-            addLog("📂 Hech qanday ro‘yxatdan o‘tgan o‘qituvchi yo‘q.");
-            return;
+    function loadTeachersFromStorage() {
+        const stored = localStorage.getItem('teachers_db');
+        if(stored) {
+            try { return JSON.parse(stored); } catch(e) { return []; }
         }
-        try {
-            const loaded = JSON.parse(raw);
-            knownTeachers = loaded.map(t => ({
-                id: t.id,
-                name: t.name,
-                descriptor: new Float32Array(t.descriptor)
-            }));
-            addLog(`✅ ${knownTeachers.length} ta o‘qituvchi yuklandi: ${knownTeachers.map(t=>t.name).join(', ')}`);
-        } catch(e) {
-            knownTeachers = [];
-            addLog("⚠️ O‘qituvchilarni yuklashda xatolik", true);
-        }
+        return [];
     }
 
-    // ---------- Yuzni ro‘yxatga olish ----------
-    async function registerTeacher() {
-        const name = teacherNameInput.value.trim();
-        if (!name) {
-            setStatus("❌ Iltimos, o‘qituvchi ismini yozing!", 'error');
-            return;
-        }
-        setStatus("📸 Yuz aniqlanmoqda... bir oz turing", 'info');
-        
-        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceDescriptors();
-        
-        if (detections.length === 0) {
-            setStatus("❌ Hech qanday yuz topilmadi. Kameraga to‘g‘ri qarang!", 'error');
-            return;
-        }
-        
-        const descriptor = detections[0].descriptor;
-        const newId = `teacher_${Date.now()}`;
-        knownTeachers.push({
-            id: newId,
-            name: name,
-            descriptor: descriptor
+    // ================= Avtomatik belgilash (tanilganda darhol) =================
+    async function autoMarkPresent(teacher) {
+        if (isTodayClosed()) return false;
+        const today = getTodayKey();
+        let att = loadAttendance();
+        if (!att[today]) att[today] = {};
+        if (att[today][teacher.id]) return false; // allaqachon belgilangan
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        att[today][teacher.id] = { time: timeStr, timestamp: now.toISOString() };
+        saveAttendance(att);
+        renderAttendance();
+        return true;
+    }
+
+    // ================= Hisobot matnini yaratish =================
+    function formatReport(teachers, attendance) {
+        const today = getTodayKey();
+        const todayData = attendance[today] || {};
+        const isClosed = todayData._closed === true;
+        let report = `📊 *${today} kunlik davomat hisoboti*\n`;
+        report += isClosed ? "🔒 *Baza yopilgan* (yakuniy)\n\n" : "🟡 *Baza hali yopilmagan*\n\n";
+        let present = [], absent = [], late = [];
+        teachers.forEach(t => {
+            const record = todayData[t.id];
+            const fullName = `${t.firstname || ''} ${t.lastname || ''}`;
+            const phone = t.phone || '';
+            if (record) {
+                const timeStr = record.time || '';
+                const isLate = timeStr > LATE_TIME;
+                const entry = `• ${fullName} (${phone}) – kelgan vaqt: ${timeStr}`;
+                if (isLate) late.push(entry + " ⚠️ (kech)");
+                else present.push(entry);
+            } else {
+                absent.push(`• ${fullName} (${phone})`);
+            }
         });
-        saveTeachers();
-        setStatus(`✅ ${name} muvaffaqiyatli ro‘yxatdan o‘tdi! Endi yuzi avtomatik tanilinadi.`, 'success');
-        teacherNameInput.value = '';
+        report += `✅ *Kelganlar* (${present.length}):\n` + (present.join("\n") || "Hech kim kelmagan") + "\n\n";
+        if (late.length) report += `⚠️ *Kech kelganlar* (${late.length}):\n` + late.join("\n") + "\n\n";
+        report += `❌ *Kelmaganlar* (${absent.length}):\n` + (absent.join("\n") || "Hamma kelgan");
+        return report;
     }
 
-    // ---------- Tanish: eng mos o‘qituvchini topish ----------
-    async function findMatchedTeacher(descriptor) {
-        if (knownTeachers.length === 0) return null;
-        let bestMatch = null;
-        let bestDistance = 0.55;  // o‘xshashlik chegarasi
-        for (let teacher of knownTeachers) {
-            const dist = faceapi.euclideanDistance(descriptor, teacher.descriptor);
-            if (dist < bestDistance) {
-                bestDistance = dist;
-                bestMatch = teacher;
-            }
-        }
-        if (bestMatch) {
-            addLog(`🎯 Tanildi: ${bestMatch.name} (masofa: ${bestDistance.toFixed(3)})`);
-        }
-        return bestMatch;
-    }
-
-    // ---------- "Keldi" ma'lumotini backendga yuborish (avtomatik) ----------
-    async function markAttendance(teacher) {
-        if (lastMarkedTeacherId === teacher.id) {
-            // allaqachon belgilangan, qayta yubormaymiz
-            return;
-        }
-        
-        setStatus(`📤 ${teacher.name} uchun avtomatik "keldi" yuborilmoqda...`, 'info');
-        addLog(`👉 ${teacher.name} (${teacher.id}) → status: keldi`);
-        
-        // Agar backend URL haqiqiy bo‘lsa
-        if (BACKEND_URL && BACKEND_URL !== "/api/attendance") {
-            try {
-                const payload = {
-                    userId: teacher.id,
-                    name: teacher.name,
-                    status: "keldi",
-                    timestamp: new Date().toISOString()
-                };
-                const response = await fetch(BACKEND_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-                const responseText = await response.text();
-                let serverData = null;
-                try {
-                    serverData = JSON.parse(responseText);
-                } catch (e) {
-                    throw new Error(`Server JSON qaytarmadi: ${responseText.slice(0, 100)}`);
-                }
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${serverData.message || 'server xatosi'}`);
-                }
-                setStatus(`✅ ${teacher.name} muvaffaqiyatli "keldi" deb belgilandi`, 'success');
-                addLog(`✅ Javob: ${JSON.stringify(serverData)}`);
-                lastMarkedTeacherId = teacher.id;
-            } catch (err) {
-                setStatus(`❌ Yuborishda xatolik: ${err.message}`, 'error');
-                addLog(`❌ Xato: ${err.message}`, true);
-            }
-        } else {
-            // Demo rejimi (backend yo‘q)
-            setStatus(`✅ ${teacher.name} ("keldi") – DEMO rejimida belgilandi`, 'success');
-            addLog(`✅ ${teacher.name} uchun "keldi" qayd etildi (backendga yuborilmadi)`);
-            lastMarkedTeacherId = teacher.id;
-        }
-    }
-
-    // ---------- Asosiy tanish funksiyasi (interval) ----------
-    async function detectAndAutoMark() {
-        if (!video || video.paused || video.ended || !video.videoWidth) return;
-        
-        try {
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptors();
-            
-            if (detections.length === 0) return;
-            
-            const descriptor = detections[0].descriptor;
-            const matchedTeacher = await findMatchedTeacher(descriptor);
-            
-            if (matchedTeacher) {
-                await markAttendance(matchedTeacher);
-            } else if (knownTeachers.length > 0) {
-                setStatus("👤 Tanilmagan yuz. Faqat ro‘yxatdan o‘tgan o‘qituvchi avtomatik belgilanadi.", 'info');
-            }
-        } catch (err) {
-            console.error("Detect xatosi:", err);
-            addLog(`⚠️ Tekshiruv xatosi: ${err.message}`, true);
-        }
-    }
-
-    // ---------- Modellarni yuklash va kamerani ishga tushirish ----------
-    async function initModelsAndCamera() {
-        setStatus("📦 Yuz tanish modellari yuklanmoqda... (ilk marotaba internet kerak)", 'info');
-        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-        try {
-            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-            addLog("✅ Barcha modellar yuklandi");
-        } catch(err) {
-            setStatus("❌ Modellarni yuklashda xatolik! Internetni tekshiring.", 'error');
-            addLog(`❌ Model xatosi: ${err.message}`, true);
+    // ================= Telegram’ga yuborish (Serverless funksiya orqali) =================
+    async function sendReportToTelegram() {
+        const teachers = loadTeachersFromStorage();
+        const attendance = loadAttendance();
+        if (!teachers.length) {
+            alert("O‘qituvchilar bazasi bo‘sh!");
             return false;
         }
-        
+        const report = formatReport(teachers, attendance);
+        try {
+            const response = await fetch('/api/send-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatId: ADMIN_CHAT_ID, message: report })
+            });
+            const result = await response.json();
+            return result.success === true;
+        } catch (err) {
+            console.error(err);
+            return false;
+        }
+    }
+
+    // ================= Bazani yopish =================
+    async function closeDay() {
+        if (isTodayClosed()) {
+            alert("Bugungi baza allaqachon yopilgan!");
+            return;
+        }
+        if (!confirm("Bugungi davomatni yakunlab, bazani yopishni xohlaysizmi? Hisobot yuboriladi.")) return;
+        const today = getTodayKey();
+        let att = loadAttendance();
+        if (!att[today]) att[today] = {};
+        att[today]._closed = true;
+        saveAttendance(att);
+        renderAttendance();
+        const ok = await sendReportToTelegram();
+        if (ok) alert("✅ Baza yopildi va hisobot yuborildi!");
+        else alert("❌ Hisobot yuborilmadi (server xatosi)");
+    }
+
+    // ================= UI: davomat jadvali =================
+    function renderAttendance() {
+        const today = getTodayKey();
+        const att = loadAttendance();
+        const todayData = att[today] || {};
+        const isClosed = todayData._closed === true;
+        const teachers = loadTeachersFromStorage();
+        if (teachers.length === 0) {
+            attendanceListDiv.innerHTML = '<div>Hali o‘qituvchilar bazasi yuklanmagan.</div>';
+            return;
+        }
+        let html = '';
+        teachers.forEach(t => {
+            const record = todayData[t.id];
+            const isPresent = !!record;
+            let timeStr = '', isLate = false, statusText = '';
+            if (isPresent) {
+                timeStr = record.time || '';
+                isLate = timeStr > LATE_TIME;
+                statusText = isLate ? `Kech keldi (${timeStr})` : `Keldi (${timeStr})`;
+            } else {
+                statusText = 'Kelmagan';
+            }
+            const badgeClass = isPresent ? (isLate ? 'badge-late' : 'badge-present') : 'badge-absent';
+            html += `
+                <div class="attendance-item">
+                    <div>
+                        <b>${t.firstname} ${t.lastname}</b> (${t.phone})
+                        ${isPresent ? `<span class="time-badge">⏰ ${timeStr}</span>` : ''}
+                        ${isPresent && isLate ? `<span class="time-badge" style="background:#ff9800;">⚠️ Kech</span>` : ''}
+                    </div>
+                    <span class="${badgeClass}">${statusText}</span>
+                </div>
+            `;
+        });
+        attendanceListDiv.innerHTML = html;
+    }
+
+    // ================= Yuz tanish + avtomatik belgilash =================
+    async function loadModels() {
+        statusDiv.innerHTML = "📥 Yuz modellari yuklanmoqda...";
+        try {
+            await faceapi.nets.ssdMobilenetv1.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
+            modelsLoaded = true;
+            statusDiv.innerHTML = "✅ Modellar yuklandi. O‘qituvchilar bazasi yuklanmoqda...";
+            await loadTeachersAndEnroll();
+        } catch(err) {
+            statusDiv.innerHTML = "❌ Modellarni yuklashda xatolik! Internetni tekshiring.";
+        }
+    }
+
+    async function loadTeachersAndEnroll() {
+        teachersDB = loadTeachersFromStorage();
+        if (!teachersDB.length) {
+            statusDiv.innerHTML = "⚠️ O‘qituvchilar bazasi bo‘sh. Avval ma’lumot kiritish sahifasidan qo‘shing.";
+            enrolledFaces = [];
+            renderAttendance();
+            return;
+        }
+        statusDiv.innerHTML = `👥 ${teachersDB.length} nafar o‘qituvchi topildi. Yuz vektorlari hisoblanmoqda...`;
+        enrolledFaces = [];
+        for (let teacher of teachersDB) {
+            if (!teacher.imageBase64) continue;
+            try {
+                const img = await loadImageFromBase64(teacher.imageBase64);
+                const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+                if (detection && detection.descriptor) {
+                    enrolledFaces.push({ descriptor: detection.descriptor, teacher: teacher });
+                }
+            } catch(e) { console.warn(teacher.firstname, e); }
+        }
+        statusDiv.innerHTML = `✅ Tayyor! ${enrolledFaces.length} / ${teachersDB.length} o‘qituvchi tanishga tayyor.`;
+        renderAttendance();
+        if (currentStream) startRecognitionLoop();
+    }
+
+    function loadImageFromBase64(base64) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = base64;
+        });
+    }
+
+    async function recognizeFromVideo() {
+        if (!modelsLoaded || !currentStream || video.readyState !== 4 || enrolledFaces.length === 0) return;
+        try {
+            const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
+            if (detections.length === 0) {
+                recogResultDiv.innerHTML = "🤔 Yuz aniqlanmadi";
+                return;
+            }
+            let bestMatch = null;
+            let bestDistance = 0.68;
+            for (let face of detections) {
+                for (let enrolled of enrolledFaces) {
+                    const dist = faceapi.euclideanDistance(face.descriptor, enrolled.descriptor);
+                    if (dist < bestDistance) {
+                        bestDistance = dist;
+                        bestMatch = enrolled.teacher;
+                    }
+                }
+            }
+            if (bestMatch) {
+                const confidence = Math.floor((1 - bestDistance) * 100);
+                recogResultDiv.innerHTML = `
+                    <div class="teacher-card">
+                        <b>${bestMatch.firstname} ${bestMatch.lastname}</b><br>
+                        📞 ${bestMatch.phone}<br>
+                        🧑‍🏫 Fan: ${bestMatch.subject || '-'}<br>
+                        🎯 Ishonchlilik: ${confidence}%
+                    </div>
+                `;
+                // Avtomatik belgilash (agar bugun belgilanmagan bo‘lsa)
+                const marked = await autoMarkPresent(bestMatch);
+                if (marked) {
+                    statusDiv.innerHTML += `<br>✅ ${bestMatch.firstname} ${bestMatch.lastname} keldi deb belgilandi (avtomatik)`;
+                }
+            } else {
+                recogResultDiv.innerHTML = "❌ Hech qanday moslik topilmadi";
+            }
+        } catch(err) { console.warn(err); }
+    }
+
+    // ================= Kamera va tsikl =================
+    async function startCamera() {
+        if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); }
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            currentStream = stream;
             video.srcObject = stream;
-            await new Promise((resolve) => {
-                video.onloadedmetadata = () => {
-                    video.play();
-                    resolve();
-                };
-            });
-            setStatus("📷 Kamera ishlayapti. O‘qituvchi yuzini ro‘yxatdan o‘tkazing yoki tanish avtomatik ishlaydi.", 'success');
-            addLog("Kamera yoqildi.");
-            return true;
-        } catch(err) {
-            setStatus("❌ Kameraga ruxsat berilmadi: " + err.message, 'error');
-            addLog(`❌ Kamera xatosi: ${err.message}`, true);
-            return false;
-        }
+            await video.play();
+            startCamBtn.textContent = "🔄 Kamera qayta yoqildi";
+            if (modelsLoaded && enrolledFaces.length) startRecognitionLoop();
+        } catch(err) { alert("Kamera xatosi"); }
     }
 
-    // ---------- Tizimni boshlash ----------
-    async function startSystem() {
-        if (intervalId) clearInterval(intervalId);
-        lastMarkedTeacherId = null;
-        loadTeachers();  // localStorage dan o‘qish
-        
-        const ok = await initModelsAndCamera();
-        if (!ok) return;
-        
-        intervalId = setInterval(() => {
-            detectAndAutoMark();
-        }, CHECK_INTERVAL);
+    function startRecognitionLoop() {
+        if (recognitionInterval) clearInterval(recognitionInterval);
+        recognitionInterval = setInterval(async () => { await recognizeFromVideo(); }, 800);
     }
 
-    // ---------- Qayta boshlash ----------
-    async function resetSystem() {
-        if (intervalId) clearInterval(intervalId);
-        if (video.srcObject) {
-            let tracks = video.srcObject.getTracks();
-            tracks.forEach(t => t.stop());
-        }
-        lastMarkedTeacherId = null;
-        setStatus("♻️ Qayta ishga tushirilmoqda...", 'info');
-        addLog("🔄 Tizim qayta tiklandi");
-        await startSystem();
+    function stopTracks() {
+        if (currentStream) { currentStream.getTracks().forEach(t => t.stop()); currentStream = null; }
+        if (recognitionInterval) { clearInterval(recognitionInterval); recognitionInterval = null; }
+        video.srcObject = null;
     }
 
-    // Event listenerlar
-    registerBtn.addEventListener('click', registerTeacher);
-    resetBtn.addEventListener('click', resetSystem);
-    
-    // Ishga tushirish
-    startSystem();
+    async function refreshData() {
+        if (!modelsLoaded) { alert("Modellar yuklanmoqda, kuting..."); return; }
+        statusDiv.innerHTML = "🔄 Bazani yangilash...";
+        await loadTeachersAndEnroll();
+        if (currentStream) startRecognitionLoop();
+    }
+
+    // ================= Event listenerlar =================
+    startCamBtn.onclick = startCamera;
+    refreshBtn.onclick = refreshData;
+    closeDayBtn.onclick = closeDay;
+
+    window.onbeforeunload = () => { stopTracks(); };
+    loadModels();
 </script>
 </body>
 </html>
